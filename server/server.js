@@ -35,7 +35,10 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // your frontend URL
+  credentials: true,               // if using cookies/auth headers
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());
