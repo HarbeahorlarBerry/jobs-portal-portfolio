@@ -32,7 +32,7 @@ const ApplyJob = () => {
   // Fetch job
   const fetchJob = async () => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/jobs/${id}`)
+      const { data } = await axios.get(`${backendUrl}/api/job/jobs/${id}`)
       if (data.success) {
         setJobData(data.job)
       } else {

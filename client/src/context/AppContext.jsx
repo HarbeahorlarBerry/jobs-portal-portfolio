@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useMemo, useEffect } from "react"
 import axios from "axios"
@@ -32,7 +33,7 @@ export const AppContextProvider = ({ children }) => {
   const fetchJobs = async () => {
     if (!backendUrl) return
     try {
-      const { data } = await axios.get(`${backendUrl}/api/jobs`)
+      const { data } = await axios.get(`${backendUrl}/api/job/jobs`)
       if (data.success) {
         setJobs(data.jobs)
       } else {
@@ -48,7 +49,7 @@ export const AppContextProvider = ({ children }) => {
     if (!companyToken || !backendUrl) return
     try {
       const { data } = await axios.get(
-        `${backendUrl}/api/company/company-data`,
+        `${backendUrl}/api/company/data`,
         { headers: { token: companyToken } }
       )
 
