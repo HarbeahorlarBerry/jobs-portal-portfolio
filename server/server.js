@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());
 
 // Routes
-app.get("/", (req, res) => res.send("API Working"));
+app.get("/", (req, res) => res.send("API is Working"));
 
 app.get("/debug-sentry", (req, res) => {
   throw new Error("My first Sentry Debug Error");
