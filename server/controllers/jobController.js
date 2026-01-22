@@ -11,7 +11,7 @@ export const getJobs = async (req, res) => {
       .populate({ path: "company", select: "-password -__v" });
 
     // Optional: filter out jobs with deleted companies
-    const filteredJobs = jobs.filter(job => job.company !== null);
+    const filteredJobs = jobs.filter(job => job.companyId !== null);
 
     return res.status(200).json({
       success: true,
