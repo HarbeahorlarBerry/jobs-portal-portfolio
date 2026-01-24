@@ -177,14 +177,23 @@ export const postJob = async (req, res) => {
 export const getCompanyJobApplicants = async (req, res) => {
 
     try {
-        const { id, status } = req.body
+      const { id, status } = req.body;
 
-        // Find Job application and update status
-        await JobApplication.findOneAndUpdate({ _id: id }, { status })
+      if (!id || !status) {
+        return res.status(400).json({
+          success: false,
+          message: "Application ID and status are required",
+        });
+      }
 
-        res.json({ success: true, message: "Status Changed"})
+      await JobApplication.findByIdAndUpdate(id, { status });
+
+      return res.json({ success: true, message: "Status changed" });
     } catch (error) {
-        res.json({success:false, message:error.message})
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
 }
 
