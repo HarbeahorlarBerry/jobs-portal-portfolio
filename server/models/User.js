@@ -23,9 +23,9 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    default: "", // optional for Clerk users
   },
-});
+}, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
 
