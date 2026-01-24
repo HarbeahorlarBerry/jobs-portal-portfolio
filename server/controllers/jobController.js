@@ -8,10 +8,10 @@ export const getJobs = async (req, res) => {
   try {
     // Fetch all visible jobs, populate company, exclude password
     const jobs = await Job.find({ visible: true })
-      .populate({ path: "companyId", select: "-password -__v" });
+      .populate({ path: "companyId", select: "name email image createdAt" });
 
     // Optional: filter out jobs with deleted companies
-    const filteredJobs = jobs.filter(job => job.companyId !== null);
+    const filteredJobs = jobs.filter(job => job.companyId);
 
     return res.status(200).json({
       success: true,
@@ -41,9 +41,9 @@ export const getJobById = async (req, res) => {
     }
 
     const job = await Job.findById(id)
-      .populate({ path: "company", select: "-password", strictPopulate: false });
+      .populate({ path: "companyId", select: "name email image createdAt", strictPopulate: false });
 
-    if (!job) {
+    if (!job || !job.companyId) {
       return res.status(404).json({
         success: false,
         message: "Job not found",

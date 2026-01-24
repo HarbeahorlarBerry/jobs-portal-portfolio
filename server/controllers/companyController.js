@@ -76,52 +76,69 @@ export const registerCompany = async (req, res) => {
 
 // Company login
 export const loginCompany = async (req, res) => {
+  try {
     const { email, password } = req.body
 
-    try {
-        const company = await Company.findOne({email})
+    const company = await Company.findOne({ email })
 
-        if (await bcrypt.compareSync(password, company.password)) {
-            return res.status(200).json({
-                success: true,
-                company: {
-                    _id: company._id,
-                    name: company.name,
-                    email: company.email,
-                    image: company.image
-                },
-                token: generateToken(company._id)
-            })
-        } else {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid email or password'
-            })
-        }
-    } catch (error) {
-        console.error('Login company error:', error)
-        return res.status(500).json({
-            success: false,
-            message: 'Error logging in company'
-        })
+    if (!company) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      })
     }
+
+    const isMatch = await bcrypt.compare(password, company.password)
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      company: {
+        _id: company._id,
+        name: company.name,
+        email: company.email,
+        image: company.image,
+      },
+      token: generateToken(company._id),
+    })
+  } catch (error) {
+    console.error("Login company error:", error)
+    return res.status(500).json({
+      success: false,
+      message: "Error logging in company",
+    })
+  }
 }
+
 
 // Get company data
 export const getCompanyData = async (req, res) => {
-
-    try {
-        const company = req.company
-        return res.status(200).json({
-            success: true,
-            company
-        })
-    } catch (error) {
-        res.json({
-            success:false,message:error.message
-        })
+  try {
+    if (!req.company) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      })
     }
+
+    return res.status(200).json({
+      success: true,
+      company: req.company,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
 }
+
 
 // Post a new job
 export const postJob = async (req, res) => {
@@ -190,7 +207,7 @@ export const getCompanyPostedJobs = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            jobsData: jobs
+            jobsData,
         })
     } catch (error) {
         res.json({ success:false,message:error.message})
