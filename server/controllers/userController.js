@@ -4,24 +4,42 @@ import Job from "../models/job.js";
 import { v2 } from "cloudinary";
 import connectCloudinary from "../config/cloudinary.js";
 
-// Get user data
+// ================= GET USER DATA =================
 export const getUserData = async (req, res) => {
+  try {
+    const clerkId = req.auth?.userId;
 
-        const userId = req.auth.userId
+    if (!clerkId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-        try {
-            const user = await User.findById(userId)
+    // Query by clerkId
+    let user = await User.findOne({ clerkId });
 
-            if (!user) {
-                return res.json({ success: false, message: "User not found" })
-            }
+    // If user does not exist, create a new user (first-time login)
+    if (!user) {
+      const clerkUser = req.auth.user; // if you have additional Clerk info
+      // You can get name, email, image from Clerk via req.auth.user or fetch from Clerk API
+      const name = req.auth?.user?.firstName || "Clerk User";
+      const email = req.auth?.user?.emailAddresses?.[0]?.emailAddress || `user-${clerkId}@clerk.local`;
+      const image = req.auth?.user?.profileImageUrl || "https://via.placeholder.com/150";
 
-            res.json({success: true, user})
+      user = await User.create({
+        clerkId,
+        name,
+        email,
+        image,
+        password: "CLERK", // placeholder, not used
+      });
+    }
 
-        } catch (error) {
-            res.json({success: false, message: "Error fetching user data"})
-        }
-}
+    return res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    return res.status(500).json({ success: false, message: "Error fetching user data" });
+  }
+};
+
 
 // Apply for a job
 export const applyForJob = async (req, res) => {
