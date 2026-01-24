@@ -8,7 +8,7 @@ export const getJobs = async (req, res) => {
   try {
     // Fetch all visible jobs, populate company, exclude password
     const jobs = await Job.find({ visible: true })
-      .populate({ path: "company", select: "-password -__v" });
+      .populate({ path: "companyId", select: "-password -__v" });
 
     // Optional: filter out jobs with deleted companies
     const filteredJobs = jobs.filter(job => job.companyId !== null);

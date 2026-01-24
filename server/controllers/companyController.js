@@ -245,7 +245,7 @@ export const changeVisibility = async (req, res) => {
     }
 
     // ⚠️ Ensure field name matches schema
-    if (job.company.toString() !== companyId.toString()) {
+    if (job.companyId.toString() !== companyId.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Not allowed to modify this job'
