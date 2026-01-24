@@ -66,25 +66,26 @@ export const AppContextProvider = ({ children }) => {
 
   /* ===================== FETCH USER DATA ===================== */
   const fetchUserData = async () => {
-    if (!user || !backendUrl) return
-    try {
-      const token = await getToken()
-      if (!token) return
+  if (!user || !backendUrl) return;
+  try {
+    const token = await getToken();
+    if (!token) throw new Error("No auth token found");
 
-      const { data } = await axios.get(
-        `${backendUrl}/api/users/user`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+    const { data } = await axios.get(`${backendUrl}/api/users/user`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (data.success) {
-        setUserData(data.user)
-      } else {
-        toast.error(data.message)
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message)
+    if (data.success) {
+      setUserData(data.user);
+    } else {
+      toast.error(data.message || "Failed to fetch user data");
     }
+  } catch (error) {
+    console.error("Fetch user data error:", error);
+    toast.error(error.response?.data?.message || error.message || "Unexpected error");
   }
+};
+
 
   /* ===================== FETCH USER APPLICATIONS ===================== */
   const fetchUserApplications = async () => {
