@@ -5,40 +5,72 @@ import { v2 } from "cloudinary";
 import connectCloudinary from "../config/cloudinary.js";
 
 // ================= GET USER DATA =================
+
 export const getUserData = async (req, res) => {
   try {
-    const clerkId = req.auth?.userId;
+    console.log("AUTH OBJECT:", req.auth);
 
-    if (!clerkId) {
+    const { userId } = req.auth || {};
+
+    if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    // Query by clerkId
-    let user = await User.findOne({ clerkId });
+    let user = await User.findOne({ clerkId: userId });
 
-    // If user does not exist, create a new user (first-time login)
     if (!user) {
-      const clerkUser = req.auth.user; // if you have additional Clerk info
-      // You can get name, email, image from Clerk via req.auth.user or fetch from Clerk API
-      const name = req.auth?.user?.firstName || "Clerk User";
-      const email = req.auth?.user?.emailAddresses?.[0]?.emailAddress || `user-${clerkId}@clerk.local`;
-      const image = req.auth?.user?.profileImageUrl || "https://via.placeholder.com/150";
-
-      user = await User.create({
-        clerkId,
-        name,
-        email,
-        image,
-        password: "CLERK", // placeholder, not used
+      return res.status(404).json({
+        success: false,
+        message: "User not found in database",
       });
     }
 
-    return res.status(200).json({ success: true, user });
+    res.json({ success: true, user });
   } catch (error) {
-    console.error("Error fetching user data:", error);
-    return res.status(500).json({ success: false, message: "Error fetching user data" });
+    console.error("getUserData error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+
+
+
+
+// export const getUserData = async (req, res) => {
+//   try {
+//     const clerkId = req.auth?.userId;
+
+//     if (!clerkId) {
+//       return res.status(401).json({ success: false, message: "Unauthorized" });
+//     }
+
+//     // Query by clerkId
+//     let user = await User.findOne({ clerkId });
+
+//     // If user does not exist, create a new user (first-time login)
+//     if (!user) {
+//       const clerkUser = req.auth.user; // if you have additional Clerk info
+//       // You can get name, email, image from Clerk via req.auth.user or fetch from Clerk API
+//       const name = req.auth?.user?.firstName || "Clerk User";
+//       const email = req.auth?.user?.emailAddresses?.[0]?.emailAddress || `user-${clerkId}@clerk.local`;
+//       const image = req.auth?.user?.profileImageUrl || "https://via.placeholder.com/150";
+
+//       user = await User.create({
+//         clerkId,
+//         name,
+//         email,
+//         image,
+//         password: "CLERK", // placeholder, not used
+//       });
+//     }
+
+//     return res.status(200).json({ success: true, user });
+//   } catch (error) {
+//     console.error("Error fetching user data:", error);
+//     return res.status(500).json({ success: false, message: "Error fetching user data" });
+//   }
+// };
 
 
 // Apply for a job
@@ -76,25 +108,27 @@ export const applyForJob = async (req, res) => {
 
 // Get user applied application
 export const getUserJobApplications = async (req, res) => {
+  try {
+    const { userId } = req.auth; // ✅ safe & clean
 
-    try {
-        
-        const userId = req.auth.userId
+    const applications = await JobApplication.find({ userId })
+      .populate("companyId", "name email image")
+      .populate("jobId", "title description location category level salary")
+      .lean(); // ✅ prevents weird mongoose mutation bugs
 
-        const applications = await JobApplication.find({ userId })
-        .populate("companyId", "name email image")
-        .populate("jobId", "title description location category level salary")
-        .exec()
+    return res.status(200).json({
+      success: true,
+      applications: applications || [],
+    });
+  } catch (error) {
+    console.error("getUserJobApplications error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching job applications",
+    });
+  }
+};
 
-        if (!applications) {
-            return res.json({ success: false, message: "No job applications found" });
-        }
-
-        return res.json({ success: true, applications });
-    } catch (error) {
-        res.json({ success: false, message: "Error fetching job applications" });
-    }
-}
 
 // Update user profile (resume)
 export const updateUserResume = async (req, res) => {

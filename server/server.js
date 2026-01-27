@@ -10,63 +10,41 @@ import userRoutes from "./routes/userRoutes.js";
 import connectCloudinary from "./config/cloudinary.js";
 import { clerkMiddleware } from "@clerk/express";
 
-// Initialize Express app
 const app = express();
 
-// ====== IMPORTANT FIX ======
-let isInitialized = false;
-
-async function init() {
-  if (!isInitialized) {
-    await connectDB();
-    await connectCloudinary();
-    isInitialized = true;
-    console.log("Backend initialized");
-  }
-}
-
-// Middleware
-app.use(async (req, res, next) => {
-  try {
-    await init();
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
+// 🔹 Init ONCE (not per request)
+await connectDB();
+await connectCloudinary();
+console.log("Backend initialized");
 
 app.use(cors({
-  origin: "http://localhost:5173", // your frontend URL
-  credentials: true,               // if using cookies/auth headers
+  origin: "http://localhost:5173",
+  credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 🔹 Clerk middleware MUST be clean and uninterrupted
 app.use(clerkMiddleware());
 
 // Routes
 app.get("/", (req, res) => res.send("API is Working"));
-
-app.get("/debug-sentry", (req, res) => {
-  throw new Error("My first Sentry Debug Error");
-});
-
 app.post("/webhooks", clerkWebhooks);
 app.use("/api/company", companyRoutes);
 app.use("/api/job", jobRoutes);
 app.use("/api/users", userRoutes);
 
-// //Port
-const PORT = process.env.PORT || 5000
-
-// Sentry Error Handler (must be last)
+// Sentry (last)
 Sentry.setupExpressErrorHandler(app);
 
-app.listen(PORT, () =>{
-     console.log(`Server running on port ${PORT}`);
-})
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-// ✅ Export for Vercel
 export default app;
+
 
 
 
