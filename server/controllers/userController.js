@@ -5,11 +5,8 @@ import { v2 } from "cloudinary";
 import connectCloudinary from "../config/cloudinary.js";
 
 // ================= GET USER DATA =================
-
 export const getUserData = async (req, res) => {
   try {
-    console.log("AUTH OBJECT:", req.auth);
-
     const { userId } = req.auth || {};
 
     if (!userId) {
@@ -32,89 +29,74 @@ export const getUserData = async (req, res) => {
   }
 };
 
+// ================= SYNC USER (FIRST LOGIN) =================
+export const syncUser = async (req, res) => {
+  try {
+    const { clerkId, name, email, image } = req.body;
 
-
-
-
-
-// export const getUserData = async (req, res) => {
-//   try {
-//     const clerkId = req.auth?.userId;
-
-//     if (!clerkId) {
-//       return res.status(401).json({ success: false, message: "Unauthorized" });
-//     }
-
-//     // Query by clerkId
-//     let user = await User.findOne({ clerkId });
-
-//     // If user does not exist, create a new user (first-time login)
-//     if (!user) {
-//       const clerkUser = req.auth.user; // if you have additional Clerk info
-//       // You can get name, email, image from Clerk via req.auth.user or fetch from Clerk API
-//       const name = req.auth?.user?.firstName || "Clerk User";
-//       const email = req.auth?.user?.emailAddresses?.[0]?.emailAddress || `user-${clerkId}@clerk.local`;
-//       const image = req.auth?.user?.profileImageUrl || "https://via.placeholder.com/150";
-
-//       user = await User.create({
-//         clerkId,
-//         name,
-//         email,
-//         image,
-//         password: "CLERK", // placeholder, not used
-//       });
-//     }
-
-//     return res.status(200).json({ success: true, user });
-//   } catch (error) {
-//     console.error("Error fetching user data:", error);
-//     return res.status(500).json({ success: false, message: "Error fetching user data" });
-//   }
-// };
-
-
-// Apply for a job
-export const applyForJob = async (req, res) => {
-
-    const { jobId } = req.body
-
-    const userId = req.auth.userId
-
-    try {
-        const isAlreadyApplied = await JobApplication.findOne({ userId, jobId });
-
-        if (isAlreadyApplied) {
-            return res.json({success:false, message:"Already Apllied"});
-        }
-
-        const jobData = await Job.findById(jobId);
-
-        if (!jobData) {
-            return res.json({success:false, message:"Job not found"});
-        }
-
-        await JobApplication.create({
-            companyId: jobData.companyId,
-            userId,
-            jobId,
-            date: Date.now()
-        });
-
-        res.json({success:true, message:"Application submitted successfully"});
-    } catch (error) {
-        res.json({ success: false, message: "Error applying for job" });
+    if (!clerkId || !email) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
-}
 
-// Get user applied application
+    let user = await User.findOne({ clerkId });
+
+    if (!user) {
+      // Create new user if not exists
+      user = await User.create({
+        clerkId,
+        name: name || "Clerk User",
+        email,
+        image: image || "https://via.placeholder.com/150",
+        password: "CLERK", // placeholder, not used
+      });
+    }
+
+    return res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error("syncUser error:", error);
+    return res.status(500).json({ success: false, message: "Error syncing user" });
+  }
+};
+
+// ================= APPLY FOR A JOB =================
+export const applyForJob = async (req, res) => {
+  const { jobId } = req.body;
+  const userId = req.auth.userId;
+
+  try {
+    const isAlreadyApplied = await JobApplication.findOne({ userId, jobId });
+    if (isAlreadyApplied) {
+      return res.json({ success: false, message: "Already Applied" });
+    }
+
+    const jobData = await Job.findById(jobId);
+    if (!jobData) {
+      return res.json({ success: false, message: "Job not found" });
+    }
+
+    await JobApplication.create({
+      companyId: jobData.companyId,
+      userId,
+      jobId,
+      date: Date.now(),
+    });
+
+    res.json({ success: true, message: "Application submitted successfully" });
+  } catch (error) {
+    console.error("applyForJob error:", error);
+    res.json({ success: false, message: "Error applying for job" });
+  }
+};
+
+// ================= GET USER APPLICATIONS =================
 export const getUserJobApplications = async (req, res) => {
   try {
-    const { userId } = req.auth; // ✅ safe & clean
+    const { userId } = req.auth;
 
     const applications = await JobApplication.find({ userId })
       .populate("companyId", "name email image")
       .populate("jobId", "title description location category level salary")
-      .lean(); // ✅ prevents weird mongoose mutation bugs
+      .lean();
 
     return res.status(200).json({
       success: true,
@@ -129,26 +111,24 @@ export const getUserJobApplications = async (req, res) => {
   }
 };
 
-
-// Update user profile (resume)
+// ================= UPDATE USER RESUME =================
 export const updateUserResume = async (req, res) => {
-    try {
-        
-        const userId = req.auth.userId
+  try {
+    const userId = req.auth.userId;
+    const resumeFile = req.file;
 
-        const resumeFile = req.file
+    const userData = await User.findById(userId);
 
-        const userData = await User.findById(userId);
-
-        if (resumeFile) {
-            const resumeUpload = await connectCloudinary.uploader.upload(resumeFile.path)
-            userData.resume = resumeUpload.secure_url;
-        }
-
-        await userData.save();
-
-        res.json({ success: true, message: "Resume updated successfully" });
-    } catch (error) {
-        res.json({ success: false, message: "Error updating resume" });
+    if (resumeFile) {
+      const resumeUpload = await connectCloudinary.uploader.upload(resumeFile.path);
+      userData.resume = resumeUpload.secure_url;
     }
-}
+
+    await userData.save();
+
+    res.json({ success: true, message: "Resume updated successfully" });
+  } catch (error) {
+    console.error("updateUserResume error:", error);
+    res.json({ success: false, message: "Error updating resume" });
+  }
+};

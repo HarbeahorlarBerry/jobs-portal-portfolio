@@ -32,7 +32,6 @@ export const AppContextProvider = ({ children }) => {
   /* ===================== FETCH JOBS ===================== */
   const fetchJobs = async () => {
     if (!backendUrl) return;
-
     try {
       const { data } = await axios.get(`${backendUrl}/api/job/jobs`);
       if (data.success) setJobs(data.jobs);
@@ -45,26 +44,22 @@ export const AppContextProvider = ({ children }) => {
   /* ===================== FETCH COMPANY DATA ===================== */
   const fetchCompanyData = async () => {
     if (!companyToken || !backendUrl) return;
-
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/company/data`,
-        { headers: { token: companyToken } }
-      );
-
+      const { data } = await axios.get(`${backendUrl}/api/company/data`, {
+        headers: { token: companyToken },
+      });
       if (data.success) {
         setCompanyData(data.company);
         localStorage.setItem("companyData", JSON.stringify(data.company));
-      } else {
-        toast.error(data.message);
-      }
+      } else toast.error(data.message);
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
     }
   };
 
-  /* ===================== SYNC USER (FIRST LOGIN SAFE) ===================== */
+  /* ===================== SYNC USER ===================== */
   const syncUser = async () => {
+    if (!user || !backendUrl) return;
     try {
       const token = await getToken({ template: "session" });
       if (!token) return;
@@ -74,12 +69,10 @@ export const AppContextProvider = ({ children }) => {
         {
           clerkId: user.id,
           name: user.fullName,
-          email: user.primaryEmailAddress.emailAddress,
+          email: user.primaryEmailAddress?.emailAddress,
           image: user.imageUrl,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
     } catch (err) {
       console.error("User sync failed", err);
@@ -89,41 +82,38 @@ export const AppContextProvider = ({ children }) => {
   /* ===================== FETCH USER DATA ===================== */
   const fetchUserData = async () => {
     if (!isLoaded || !user || !backendUrl) return;
-
     try {
       const token = await getToken({ template: "session" });
       if (!token) return;
 
-      const { data } = await axios.get(
-        `${backendUrl}/api/users/user`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.get(`${backendUrl}/api/users/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (data.success) setUserData(data.user);
-      else toast.error(data.message);
+      else setUserData(null);
     } catch (error) {
       console.error("Fetch user data error:", error);
-      toast.error(error.response?.data?.message || error.message);
+      setUserData(null);
     }
   };
 
   /* ===================== FETCH USER APPLICATIONS ===================== */
   const fetchUserApplications = async () => {
     if (!isLoaded || !user || !backendUrl) return;
-
     try {
       const token = await getToken({ template: "session" });
       if (!token) return;
 
-      const { data } = await axios.get(
-        `${backendUrl}/api/users/applications`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const { data } = await axios.get(`${backendUrl}/api/users/applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (data.success) setUserApplications(data.applications);
-      else toast.error(data.message);
+      else setUserApplications([]);
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      console.error("Fetch user applications error:", error);
+      setUserApplications([]);
     }
   };
 
@@ -155,9 +145,11 @@ export const AppContextProvider = ({ children }) => {
     if (!isLoaded) return;
 
     if (user) {
-      syncUser();
-      fetchUserData();
-      fetchUserApplications();
+      // First sync the user, then fetch data and applications
+      syncUser().finally(() => {
+        fetchUserData();
+        fetchUserApplications();
+      });
     } else {
       setUserData(null);
       setUserApplications([]);
@@ -198,13 +190,8 @@ export const AppContextProvider = ({ children }) => {
     ]
   );
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
 
 
 
