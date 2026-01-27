@@ -4,7 +4,7 @@ import {
   getUserData,
   getUserJobApplications,
   updateUserResume,
-  syncUser,
+  syncUser, // import new controller
 } from "../controllers/userController.js";
 import upload from "../config/multer.js";
 import { requireAuth } from "@clerk/express";
@@ -13,7 +13,7 @@ const userRoutes = express.Router();
 
 // ===================== USER ROUTES (PROTECTED) =====================
 
-// Sync user (first login)
+// Sync user first time login
 userRoutes.post("/sync", requireAuth(), syncUser);
 
 // Get user data

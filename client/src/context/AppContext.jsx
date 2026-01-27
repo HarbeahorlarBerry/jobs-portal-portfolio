@@ -59,23 +59,31 @@ export const AppContextProvider = ({ children }) => {
 
   /* ===================== SYNC USER ===================== */
   const syncUser = async () => {
-    if (!user || !backendUrl) return;
+    if (!user || !backendUrl) return null;
     try {
       const token = await getToken({ template: "session" });
-      if (!token) return;
+      if (!token) return null;
 
-      await axios.post(
-        `${backendUrl}/api/users/sync`,
-        {
-          clerkId: user.id,
-          name: user.fullName,
-          email: user.primaryEmailAddress?.emailAddress,
-          image: user.imageUrl,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const payload = {
+        clerkId: user.id,
+        name: user.fullName || "Clerk User",
+        email: user.primaryEmailAddress?.emailAddress || `user-${user.id}@clerk.local`,
+        image: user.imageUrl || "https://via.placeholder.com/150",
+      };
+
+      const { data } = await axios.post(`${backendUrl}/api/users/sync`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (data.success) return data.user;
+      else {
+        toast.error("User sync failed");
+        return null;
+      }
     } catch (err) {
       console.error("User sync failed", err);
+      toast.error("Error syncing user");
+      return null;
     }
   };
 
@@ -145,10 +153,14 @@ export const AppContextProvider = ({ children }) => {
     if (!isLoaded) return;
 
     if (user) {
-      // First sync the user, then fetch data and applications
-      syncUser().finally(() => {
-        fetchUserData();
-        fetchUserApplications();
+      // First, sync the user on backend
+      syncUser().then((syncedUser) => {
+        if (syncedUser) {
+          // Then fetch applications
+          fetchUserApplications();
+        }
+        // Always update userData in frontend
+        setUserData(syncedUser);
       });
     } else {
       setUserData(null);

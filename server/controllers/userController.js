@@ -34,29 +34,41 @@ export const syncUser = async (req, res) => {
   try {
     const { clerkId, name, email, image } = req.body;
 
-    if (!clerkId || !email) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    if (!clerkId || !name || !email || !image) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required user fields" });
     }
 
+    // Check if user already exists
     let user = await User.findOne({ clerkId });
 
     if (!user) {
-      // Create new user if not exists
+      // Create new user
       user = await User.create({
         clerkId,
-        name: name || "Clerk User",
+        name,
         email,
-        image: image || "https://via.placeholder.com/150",
-        password: "CLERK", // placeholder, not used
+        image,
+        password: "CLERK", // placeholder
       });
+    } else {
+      // Optionally update existing user info
+      user.name = name;
+      user.email = email;
+      user.image = image;
+      await user.save();
     }
 
     return res.status(200).json({ success: true, user });
-  } catch (error) {
-    console.error("syncUser error:", error);
-    return res.status(500).json({ success: false, message: "Error syncing user" });
+  } catch (err) {
+    console.error("Sync user error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error syncing user" });
   }
 };
+
 
 // ================= APPLY FOR A JOB =================
 export const applyForJob = async (req, res) => {
