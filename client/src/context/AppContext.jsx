@@ -76,6 +76,7 @@ export const AppContextProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Fetch user data error:", error);
+      toast.error("Error fetching user data");
       setUserData(null);
     }
   };
@@ -88,12 +89,9 @@ export const AppContextProvider = ({ children }) => {
       const token = await getToken({ template: "session" });
       if (!token) return;
 
-      const { data } = await axios.get(
-        `${backendUrl}/api/users/applications`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const { data } = await axios.get(`${backendUrl}/api/users/applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (data.success) {
         setUserApplications(data.applications);
@@ -102,6 +100,7 @@ export const AppContextProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Fetch user applications error:", error);
+      toast.error("Error fetching user applications");
       setUserApplications([]);
     }
   };
@@ -134,8 +133,10 @@ export const AppContextProvider = ({ children }) => {
     if (!isLoaded) return;
 
     if (user) {
-      fetchUserData();
-      fetchUserApplications();
+      const fetchAllUserData = async () => {
+        await Promise.all([fetchUserData(), fetchUserApplications()]);
+      };
+      fetchAllUserData();
     } else {
       setUserData(null);
       setUserApplications([]);
@@ -176,11 +177,7 @@ export const AppContextProvider = ({ children }) => {
     ]
   );
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 
