@@ -7,67 +7,24 @@ import connectCloudinary from "../config/cloudinary.js";
 // ================= GET USER DATA =================
 export const getUserData = async (req, res) => {
   try {
-    const { userId } = req.auth || {};
+    const { userId } = req.auth;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    let user = await User.findOne({ clerkId: userId });
+    const user = await User.findOne({ clerkId: userId });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found in database",
+        message: "User not found (webhook not processed yet)",
       });
-    }
-
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error("getUserData error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// ================= SYNC USER (FIRST LOGIN) =================
-export const syncUser = async (req, res) => {
-  try {
-    const { clerkId, name, email, image } = req.body;
-
-    if (!clerkId || !name || !email || !image) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required user fields" });
-    }
-
-    // Check if user already exists
-    let user = await User.findOne({ clerkId });
-
-    if (!user) {
-      // Create new user
-      user = await User.create({
-        clerkId,
-        name,
-        email,
-        image,
-        password: "CLERK", // placeholder
-      });
-    } else {
-      // Optionally update existing user info
-      user.name = name;
-      user.email = email;
-      user.image = image;
-      await user.save();
     }
 
     return res.status(200).json({ success: true, user });
-  } catch (err) {
-    console.error("Sync user error:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error syncing user" });
+  } catch (error) {
+    console.error("getUserData error:", error);
+    return res.status(500).json({ success: false });
   }
 };
+
 
 
 // ================= APPLY FOR A JOB =================

@@ -57,39 +57,10 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
-  /* ===================== SYNC USER ===================== */
-  const syncUser = async () => {
-    if (!user || !backendUrl) return null;
-    try {
-      const token = await getToken({ template: "session" });
-      if (!token) return null;
-
-      const payload = {
-        clerkId: user.id,
-        name: user.fullName || "Clerk User",
-        email: user.primaryEmailAddress?.emailAddress || `user-${user.id}@clerk.local`,
-        image: user.imageUrl || "https://via.placeholder.com/150",
-      };
-
-      const { data } = await axios.post(`${backendUrl}/api/users/sync`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (data.success) return data.user;
-      else {
-        toast.error("User sync failed");
-        return null;
-      }
-    } catch (err) {
-      console.error("User sync failed", err);
-      toast.error("Error syncing user");
-      return null;
-    }
-  };
-
   /* ===================== FETCH USER DATA ===================== */
   const fetchUserData = async () => {
     if (!isLoaded || !user || !backendUrl) return;
+
     try {
       const token = await getToken({ template: "session" });
       if (!token) return;
@@ -98,8 +69,11 @@ export const AppContextProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (data.success) setUserData(data.user);
-      else setUserData(null);
+      if (data.success) {
+        setUserData(data.user);
+      } else {
+        setUserData(null);
+      }
     } catch (error) {
       console.error("Fetch user data error:", error);
       setUserData(null);
@@ -109,16 +83,23 @@ export const AppContextProvider = ({ children }) => {
   /* ===================== FETCH USER APPLICATIONS ===================== */
   const fetchUserApplications = async () => {
     if (!isLoaded || !user || !backendUrl) return;
+
     try {
       const token = await getToken({ template: "session" });
       if (!token) return;
 
-      const { data } = await axios.get(`${backendUrl}/api/users/applications`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(
+        `${backendUrl}/api/users/applications`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      if (data.success) setUserApplications(data.applications);
-      else setUserApplications([]);
+      if (data.success) {
+        setUserApplications(data.applications);
+      } else {
+        setUserApplications([]);
+      }
     } catch (error) {
       console.error("Fetch user applications error:", error);
       setUserApplications([]);
@@ -153,15 +134,8 @@ export const AppContextProvider = ({ children }) => {
     if (!isLoaded) return;
 
     if (user) {
-      // First, sync the user on backend
-      syncUser().then((syncedUser) => {
-        if (syncedUser) {
-          // Then fetch applications
-          fetchUserApplications();
-        }
-        // Always update userData in frontend
-        setUserData(syncedUser);
-      });
+      fetchUserData();
+      fetchUserApplications();
     } else {
       setUserData(null);
       setUserApplications([]);
@@ -202,7 +176,11 @@ export const AppContextProvider = ({ children }) => {
     ]
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
 

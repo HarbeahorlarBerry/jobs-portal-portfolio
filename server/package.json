@@ -4,9 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "server": "nodemon server.js",
-    "start": "node server.js"
-  },
+  "server": "nodemon --exec \"node --import ./config/instrument.js\" server.js",
+  "start": "node --import ./config/instrument.js server.js"
+}
+,
   "keywords": [],
   "author": "",
   "license": "ISC",
