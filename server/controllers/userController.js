@@ -6,29 +6,29 @@ import connectCloudinary from "../config/cloudinary.js";
 // ================= GET USER DATA =================
 export const getUserData = async (req, res) => {
   try {
-    const { userId } = req.auth;
+    // Defensive check for auth
+    if (!req.auth || !req.auth.userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
-    // Find user by Clerk ID
-    let user = await User.findOne({ clerkId: userId });
+    const userId = req.auth.userId;
 
-    // Optional fallback: create user if not found (first login)
+    const user = await User.findOne({ clerkId: userId });
+
     if (!user) {
-      user = await User.create({
-        clerkId: userId,
-        name: req.auth.fullName || "Clerk User",
-        email: req.auth.primaryEmailAddress?.emailAddress || `user-${userId}@clerk.local`,
-        image: req.auth.imageUrl || "https://via.placeholder.com/150",
-        resume: "",
-        password: "CLERK",
+      return res.status(404).json({
+        success: false,
+        message: "User not found (webhook not processed yet)",
       });
     }
 
     return res.status(200).json({ success: true, user });
   } catch (error) {
     console.error("getUserData error:", error);
-    return res.status(500).json({ success: false, message: "Error fetching user data" });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // ================= APPLY FOR A JOB =================
 export const applyForJob = async (req, res) => {
