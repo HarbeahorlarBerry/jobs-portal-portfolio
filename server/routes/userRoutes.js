@@ -13,13 +13,13 @@ const userRoutes = express.Router();
 // ===================== USER ROUTES (PROTECTED) =====================
 
 // Get user data
-userRoutes.get("/user", getUserData);
+userRoutes.get("/", requireAuth(), getUserData);
 
 // Apply for a job
-userRoutes.post("/apply", applyForJob);
+userRoutes.post("/apply", requireAuth(), applyForJob);
 
 // Get applied jobs
-userRoutes.get("/applications", getUserJobApplications);
+userRoutes.get("/applications", requireAuth(), getUserJobApplications);
 
 // Update user resume
 userRoutes.post(
