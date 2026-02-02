@@ -1,13 +1,13 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import connectDB from "../config/db.js";
+import connectDB from "./config/db.js";
 import * as Sentry from "@sentry/node";
-import { clerkWebhooks } from "../controllers/webhooks.js";
-import companyRoutes from "../routes/companyRoutes.js";
-import jobRoutes from "../routes/jobRoutes.js";
-import userRoutes from "../routes/userRoutes.js";
-import connectCloudinary from "../config/cloudinary.js";
+import { clerkWebhooks } from "./controllers/webhooks.js";
+import companyRoutes from "./routes/companyRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import connectCloudinary from "./config/cloudinary.js";
 import { clerkMiddleware } from "@clerk/express";
 
 const app = express();
