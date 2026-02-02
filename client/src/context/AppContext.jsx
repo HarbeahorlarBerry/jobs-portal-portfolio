@@ -65,7 +65,7 @@ export const AppContextProvider = ({ children }) => {
       const token = await getToken({ template: "session" });
       if (!token) return;
 
-      const { data } = await axios.get(`${backendUrl}/api/users/user`, {
+      const { data } = await axios.get(`${backendUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
