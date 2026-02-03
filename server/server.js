@@ -22,6 +22,10 @@ app.use(cors({
   credentials: true,
 }));
 
+// 2. THE FIX: Define webhook BEFORE the global JSON middleware
+// Use express.raw so Svix gets the exact string it needs
+app.post("/webhooks", express.raw({ type: 'application/json' }), clerkWebhooks);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,7 +34,7 @@ app.use(clerkMiddleware());
 
 // Routes
 app.get("/", (req, res) => res.send("API is Working"));
-app.post("/webhooks", clerkWebhooks);
+// app.post("/webhooks", clerkWebhooks);
 app.use("/api/company", companyRoutes);
 app.use("/api/job", jobRoutes);
 app.use("/api/users", userRoutes);
