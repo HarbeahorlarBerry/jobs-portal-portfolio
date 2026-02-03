@@ -18,8 +18,10 @@ await connectCloudinary();
 console.log("Backend initialized"); 
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "http://localhost:5173", // Must match your local dev URL exactly
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "svix-id", "svix-signature", "svix-timestamp"]
 }));
 
 // 2. THE FIX: Define webhook BEFORE the global JSON middleware
