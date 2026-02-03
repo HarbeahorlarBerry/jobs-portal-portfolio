@@ -47,6 +47,15 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
+// Add this right BEFORE export default app
+app.use((req, res) => {
+    console.log("Path hit:", req.originalUrl);
+    res.status(404).json({
+        error: "Route not found",
+        pathReceived: req.originalUrl
+    });
+});
+
 export default app;
 
 
